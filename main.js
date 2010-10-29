@@ -183,6 +183,8 @@ USBExportMainWindow.prototype.executeExport = function()
 	{
 		Amarok.debug("" + e);
 	}
+
+	this.close(true);
 }
 
 USBExportMainWindow.prototype.selectOutputTemp = function()
