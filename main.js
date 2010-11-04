@@ -147,7 +147,7 @@ USBExportMainWindow.prototype.executeExport = function()
 					else
 						ratingval = (list[i][2] / 2);
 					out.writeString(
-						"#EXTINF:" + Math.floor(list[i][1]/1000) + "," + list[i][3] + " - " + list[i][4] + " (" + ratingval + ")" + "\n" +
+						"#EXTINF:" + Math.floor(list[i][1]/1000) + "," + list[i][3] + " - (" + ratingval + ") " + list[i][4] + "\n" +
 						list[i][0] + "\n");
 				}
 				out.flush();

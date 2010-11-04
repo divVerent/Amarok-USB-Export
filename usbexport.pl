@@ -31,9 +31,10 @@ mkdir $cache; # IGNORE
 sub Cleanup($)
 {
 	my ($fn) = @_;
-	$fn =~ s{[^0-9A-Za-z_ .()-]}{%}g;
-	#$fn =~ s/^(.{53}).*( \([0-9.]*\))$/$1$2/;
-	$fn =~ s/^(.{42}).*( \([0-9.]*\))$/$1$2/;
+	$fn =~ s{[^0-9A-Za-z_ .()-]}{_}g;
+	$fn =~ s/^(.{59}).*$/$1$2/;
+	# (rating) at start of file name
+	# 59: 63 minus ".mp3"
 	$fn =~ s/^ *//;
 	$fn =~ s/ *$//;
 	$fn = lc $fn;
@@ -53,12 +54,16 @@ sub TagMP3($$$)
 
 	my $title = $tagname;
 	my $artist = "???";
+	my $album = "???";
 	$title =~ s/(.*) - //
 		and $artist = $1;
+	$title =~ s/^\(([^)]+)\) //
+		and $album = $1;
 
 	local $ENV{mp3_title} = $title;
 	local $ENV{mp3_artist} = $artist;
-	system 'id3v2 -a "$mp3_artist" -t "$mp3_title" "$mp3_file"';
+	local $ENV{mp3_album} = $album;
+	system 'id3v2 -a "$mp3_artist" -A "$mp3_album" -t "$mp3_title" "$mp3_file"';
 }
 
 sub CacheFile($$$$)
@@ -188,7 +193,7 @@ while(<$pfh>)
 		next;
 	}
 	my $infile = $_;
-	$extname = ($infile =~ m!/([^/]*?)\.[^./]*$!)
+	$extname = ($infile =~ m!([^/]*)\.[^./]*$!)
 		if not defined $extname or $extname eq "";
 	$extlength = 3*60
 		if not defined $extlength or $extlength == 0;
