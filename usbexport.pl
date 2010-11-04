@@ -175,9 +175,14 @@ sub job(&)
 print STDERR "reading the playlist...\n";
 open my $pfh, "<", $playlist
 	or die "<$playlist: $!";
+binmode $pfh, ":utf8";
 
 open my $infofile, ">", "$temp/filemap"
 	or die ">$temp/filemap: $!";
+binmode $infofile, ":utf8";
+
+binmode STDERR, ":utf8";
+binmode STDOUT, ":utf8";
 
 print STDERR "compacting and generating...\n";
 my $extname = undef;
