@@ -209,7 +209,9 @@ while(<$pfh>)
 		$prefix = substr $outfile, 0, 1;
 		mkdir "$temp/$prefix";
 	}
-	my $cachefile = Digest::MD5::md5_hex($infile);
+	my $infile_bytes = "$infile";
+	utf8::encode($infile_bytes);
+	my $cachefile = Digest::MD5::md5_hex($infile_bytes);
 	print $infofile "$_\n$prefix/$outfile\n";
 	job
 	{
