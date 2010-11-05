@@ -32,7 +32,7 @@ sub Cleanup($)
 {
 	my ($fn) = @_;
 	$fn =~ s{[^[:alnum:]_ .()-]}{_}g;
-	$fn =~ s/^(.{59}).*$/$1$2/;
+	$fn =~ s/^(.{59}).*$/$1/;
 	# (rating) at start of file name
 	# 59: 63 minus ".mp3"
 	$fn =~ s/^ *//;

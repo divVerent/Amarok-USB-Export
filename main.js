@@ -27,7 +27,7 @@ USBExportMainWindow.prototype.executeSave = function(e)
 	Amarok.debug("Saved");
 }
 
-USBExportMainWindow.prototype.executeExport = function()
+USBExportMainWindow.prototype.getListForExport = function(field)
 {
 	var totalTimeRemaining = this.totalDurationSpinBox.value * 60 * 60 * 1000; // hours to millseconds
 	var finished = false;
@@ -86,9 +86,10 @@ USBExportMainWindow.prototype.executeExport = function()
 			if(len > timeRemaining)
 				break;
 			timeRemaining -= len;
-			list.push([path, len, rating, artist, title]);
+			list.push({ path: path, len: len, rating: rating, artist: artist, title: title, rand: Math.random()});
 		}
 	}
+
 	function compareItem(a, b)
 	{
 		if(a[0] < b[0])
@@ -97,7 +98,6 @@ USBExportMainWindow.prototype.executeExport = function()
 			return 1;
 		return 0;
 	}
-	list.sort(compareItem);
 
 	/*
 	var counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -117,6 +117,26 @@ USBExportMainWindow.prototype.executeExport = function()
 		Amarok.debug("Rating == " + (i-1)/2 + " stars: " + counter[i]*1.0/total);
 	}
 	*/
+
+	if(field != null)
+	{
+		function compareItem(a, b)
+		{
+			if(a[field] < b[field])
+				return -1;
+			if(a[field] > b[field])
+				return 1;
+			return 0;
+		}
+		list.sort(compareItem);
+	}
+
+	return list;
+}
+
+USBExportMainWindow.prototype.executeExport = function()
+{
+	var list = this.getListForExport("path");
 
 	try
 	{
@@ -142,13 +162,13 @@ USBExportMainWindow.prototype.executeExport = function()
 				for(var i = 0; i < list.length; ++i)
 				{
 					var ratingval;
-					if(list[i][2] == null)
+					if(list[i].rating == null)
 						ratingval = "unrated";
 					else
-						ratingval = (list[i][2] / 2);
+						ratingval = (list[i].rating / 2);
 					out.writeString(
-						"#EXTINF:" + Math.floor(list[i][1]/1000) + "," + list[i][3] + " - (" + ratingval + ") " + list[i][4] + "\n" +
-						list[i][0] + "\n");
+						"#EXTINF:" + Math.floor(list[i].len/1000) + "," + list[i].artist + " - (" + ratingval + ") " + list[i].title + "\n" +
+						list[i].path + "\n");
 				}
 				out.flush();
 				f.flush();
@@ -187,6 +207,25 @@ USBExportMainWindow.prototype.executeExport = function()
 	this.close(true);
 }
 
+USBExportMainWindow.prototype.executeExportToPlaylist = function()
+{
+	var list = this.getListForExport("rand");
+
+	try
+	{
+		Amarok.Playlist.clearPlaylist();
+		for(var i = 0; i < list.length; ++i)
+		{
+			Amarok.debug(list[i].path);
+				Amarok.Playlist.addMedia(new QUrl("file:///" + list[i].path));
+		}
+	}
+	catch(e)
+	{
+		Amarok.debug("" + e);
+	}
+}
+
 USBExportMainWindow.prototype.selectOutputTemp = function()
 {
 	var out = QFileDialog.getExistingDirectory(null, "Select temporary directory (WILL GET DELETED)", this.outputTempLineEdit.text);
@@ -223,6 +262,10 @@ function USBExportMainWindow()
 	this.saveButton.clicked.connect(this, this.executeSave);
 	this.saveButton.text = "Save";
 
+	this.exportToPlaylistButton = new QPushButton(mainWidget);
+	this.exportToPlaylistButton.clicked.connect(this, this.executeExportToPlaylist);
+	this.exportToPlaylistButton.text = "To Playlist";
+
 	this.parametersBox = new QGroupBox("Settings", mainWidget);
 	this.buttonsBox = new QWidget(mainWidget);
 
@@ -236,6 +279,7 @@ function USBExportMainWindow()
 	var buttonsLayout = new QHBoxLayout();
 	buttonsLayout.addWidget(this.exportButton, 0, 0);
 	buttonsLayout.addWidget(this.saveButton, 0, 0);
+	buttonsLayout.addWidget(this.exportToPlaylistButton, 0, 0);
 	this.buttonsBox.setLayout(buttonsLayout);
 
 	//var groupLayout = new QGridLayout(mainWidget);
