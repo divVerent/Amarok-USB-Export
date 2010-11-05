@@ -31,7 +31,7 @@ mkdir $cache; # IGNORE
 sub Cleanup($)
 {
 	my ($fn) = @_;
-	$fn =~ s{[^0-9A-Za-z_ .()-]}{_}g;
+	$fn =~ s{[^[:alnum:]_ .()-]}{_}g;
 	$fn =~ s/^(.{59}).*$/$1$2/;
 	# (rating) at start of file name
 	# 59: 63 minus ".mp3"
