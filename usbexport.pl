@@ -41,6 +41,14 @@ sub Cleanup($)
 	return $fn;
 }
 
+sub iso($)
+{
+	my ($n) = @_;
+	return $n if not defined $n;
+	my $iso = Encode::encode("iso-8859-1", "$n", Encode::FB_DEFAULT);
+	return $iso;
+}
+
 sub TagMP3($$$)
 {
         my ($origname, $filename, $tagname) = @_;
@@ -60,9 +68,9 @@ sub TagMP3($$$)
 	$title =~ s/^\(([^)]+)\) //
 		and $album = $1;
 
-	local $ENV{mp3_title} = $title;
-	local $ENV{mp3_artist} = $artist;
-	local $ENV{mp3_album} = $album;
+	local $ENV{mp3_title} = iso $title;
+	local $ENV{mp3_artist} = iso $artist;
+	local $ENV{mp3_album} = iso $album;
 	system 'id3v2 -a "$mp3_artist" -A "$mp3_album" -t "$mp3_title" "$mp3_file"';
 }
 
