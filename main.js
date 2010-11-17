@@ -84,8 +84,14 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 			if(dupeskip[artist + " - " + title])
 				continue;
 			dupeskip[artist + " - " + title] = true;
-			if(len > timeRemaining)
+			if(len > totalTimeRemaining + timeRemaining)
+			{
+				// if we exceeded the TOTAL time, bail out
+				// so we won't prefer the tiny tracks next round
 				break OUTER;
+			}
+			if(len > timeRemaining)
+				break;
 			timeRemaining -= len;
 			list.push({ path: path, len: len, rating: rating, artist: artist, title: title, rand: Math.random()});
 		}
