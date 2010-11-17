@@ -62,16 +62,16 @@ sub TagMP3($$$)
 
 	my $title = $tagname;
 	my $artist = "???";
-	my $album = "???";
+	my $rating = "???";
 	$title =~ s/(.*) - //
 		and $artist = $1;
 	$title =~ s/^\(([^)]+)\) //
-		and $album = $1;
+		and $rating = $1;
 
 	local $ENV{mp3_title} = iso $title;
 	local $ENV{mp3_artist} = iso $artist;
-	local $ENV{mp3_album} = iso $album;
-	system 'id3v2 -a "$mp3_artist" -A "$mp3_album" -t "$mp3_title" "$mp3_file"';
+	local $ENV{mp3_rating} = iso $rating;
+	system 'id3v2 -a "$mp3_artist" -A "$mp3_album" -t "($mp3_rating) $mp3_title" "$mp3_file"';
 }
 
 sub CacheFile($$$$)
@@ -217,7 +217,7 @@ while(<$pfh>)
 		$prefix = substr $outfile, 0, 1;
 		mkdir "$temp/$prefix";
 	}
-	my $infile_bytes = "$infile";
+	my $infile_bytes = "$infile//$extname";
 	utf8::encode($infile_bytes);
 	my $cachefile = Digest::MD5::md5_hex($infile_bytes);
 	print $infofile "$_\n$prefix/$outfile\n";
