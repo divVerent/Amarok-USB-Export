@@ -34,6 +34,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 	var list = [];
 	var dupeskip = new Object();
 	var timeRemaining = 0;
+	OUTER:
 	for(var i = 10; !finished && i >= -1; --i)
 	{
 		var timeChunk;
@@ -84,7 +85,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 				continue;
 			dupeskip[artist + " - " + title] = true;
 			if(len > timeRemaining)
-				break;
+				break OUTER;
 			timeRemaining -= len;
 			list.push({ path: path, len: len, rating: rating, artist: artist, title: title, rand: Math.random()});
 		}
