@@ -63,7 +63,7 @@ sub TagMP3($$$)
 	my $title = $tagname;
 	my $artist = "???";
 	my $rating = "???";
-	$title =~ s/(.*) - //
+	$title =~ s/(.*?) - //
 		and $artist = $1;
 	$title =~ s/^\(([^)]+)\) //
 		and $rating = $1;
