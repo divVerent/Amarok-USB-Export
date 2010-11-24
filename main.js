@@ -54,11 +54,11 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 
 		var sql;
 		if(i >= 10)
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating IS NULL AND t.length <= " + Amarok.Collection.escape(timeRemaining) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else if(i >= 0)
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating > " + Amarok.Collection.escape(i) + " AND t.length <= " + Amarok.Collection.escape(timeRemaining) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE t.length <= " + Amarok.Collection.escape(timeRemaining) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		//Amarok.debug(sql);
 		var result = Amarok.Collection.query(sql);
 		//Amarok.debug(result.length);
