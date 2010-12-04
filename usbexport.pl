@@ -96,8 +96,8 @@ sub CacheFile($$$$)
 	if($file =~ /\.ogg$/)
 	{
 		print "Always re-encoding OGG files.\n";
-		#system 'oggdec -o - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
-		system 'ogg123 -d wav -f - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
+		system 'oggdec -o - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
+		#system 'ogg123 -d wav -f - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
 			and die "lame/oggdec: $?";
 	}
 	elsif($file =~ /\.flac$/)
