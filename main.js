@@ -147,6 +147,53 @@ USBExportMainWindow.prototype.executeExport = function()
 
 	try
 	{
+		var outdir = this.outputDeviceDirLineEdit.text;
+		var f_ratings = new QFile(outdir + "/ratings.txt");
+		f_ratings.open(new QIODevice.OpenMode(QIODevice.ReadOnly));
+		if(f_ratings.isReadable())
+		{
+			var allRatings = new Object();
+			var allRatingsKeys = [];
+			try
+			{
+				var ratings = new QTextStream(f_ratings);
+				for(;;)
+				{
+					var path = ratings.readLine();
+					var rating = ratings.readLine();
+					if(!rating)
+						break;
+					rating = Math.round(parseFloat(rating) * 2);
+					if(allRatings[path] == null)
+						allRatingsKeys.push(path);
+					allRatings[path] = rating;
+				}
+			}
+			finally
+			{
+				f_ratings.close();
+			}
+
+			if(allRatingsKeys.length)
+			{
+				var str = "";
+				allRatingsKeys.sort();
+				for(var i = 0; i < allRatingsKeys.length; ++i)
+					str += allRatingsKeys[i] + ": " + (allRatings[allRatingsKeys[i]] / 2.0) + "\n";
+				str = "Update the following ratings?\n\n" + str;
+				var result = (Amarok.alert(str, "questionYesNo") == 3); // yes == 3, no == 4
+				if(result)
+				{
+					for(var e in allRatings)
+					{
+						var sql = "INSERT INTO statistics SET url=(SELECT id FROM urls WHERE rpath='" + Amarok.Collection.escape(e) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						Amarok.Collection.query(sql);
+					}
+					f_ratings.remove();
+				}
+			}
+		}
+
 		var tempdir = this.outputTempLineEdit.text;
 		new QDir("/").mkpath(tempdir);
 
@@ -196,7 +243,7 @@ USBExportMainWindow.prototype.executeExport = function()
 				"/",
 				"160",
 				"--vbr-new -V 3 -q 2",
-				this.outputDeviceDirLineEdit.text,
+				outdir,
 				(this.outputID3CheckBox.checked ? "0" : "1"),
 				(this.outputSubdirsCheckBox.checked ? "1" : "0")
 			]);
