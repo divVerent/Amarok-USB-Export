@@ -14,7 +14,7 @@ my $temp = shift @ARGV; # temp path
 my $cache = shift @ARGV; # cache location
 my $base = shift @ARGV; # relative base
 my $thrbitrate = shift @ARGV; # bitrate threshold
-my $lamesettings = shift @ARGV; # any LAME options
+my $oacopts = shift @ARGV; # any mplayer -oacopts
 my $devicedir = shift @ARGV; # dir to rsync to
 my $no_id3 = shift @ARGV;
 my $use_subdirs = shift @ARGV;
@@ -93,38 +93,16 @@ sub CacheFile($$$$)
 	local $ENV{outfile} = $cachefile;
 
 	my $bitrate = (-s "$infile") / (128 * $length);
-	if($file =~ /\.ogg$/)
+	if($file =~ /\.mp3$/ && (defined $bitrate and $bitrate < $thrbitrate))
 	{
-		print "Always re-encoding OGG files.\n";
-		system 'oggdec -o - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
-		#system 'ogg123 -d wav -f - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
-			and die "lame/oggdec: $?";
+		print "Bitrate is only $bitrate (threshold: $thrbitrate), not re-encoding!\n";
+		system 'cp -v "$infile" "$outfile"'
+			and die "ln: $?";
 	}
-	elsif($file =~ /\.flac$/)
-	{
-		print "Always re-encoding FLAC files.\n";
-		system 'flac -d -o - "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
-			and die "lame/flac: $?";
-	}
-	elsif($file =~ /\.mp3$/)
-	{
-		if(not defined $bitrate or $bitrate >= $thrbitrate)
-		{
-			print "Bitrate is $bitrate (threshold: $thrbitrate), re-encoding.\n";
-			system 'madplay --display-time=remaining -v -o wav:- --amplify=-2.5 "$infile" | lame ' . $lamesettings . ' - "$outfile^" && mv "$outfile^" "$outfile"'
-				and die "lame: $?";
-		}
-		else
-		{
-			print "Bitrate is only $bitrate (threshold: $thrbitrate), not re-encoding!\n";
-			system 'cp -v "$infile" "$outfile"'
-				and die "ln: $?";
-		}
-	}
-	else # if($file =~ /\.m4a$|\.mpc$/)
+	else
 	{
 		print "Always re-encoding other files.\n";
-		system 'mplayer -ao pcm "$infile" && lame ' . $lamesettings . ' audiodump.wav "$outfile^" && rm audiodump.wav && mv "$outfile^" "$outfile"'
+		system 'mplayer -o "$outfile^" "$infile" -novideo -oac libmp3lame -oacopts ' . $oacopts . ' && mv "$outfile^" "$outfile"'
 			and die "lame/mplayer: $?";
 	}
 

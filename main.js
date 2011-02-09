@@ -242,7 +242,7 @@ USBExportMainWindow.prototype.executeExport = function()
 				cachedir,
 				"/",
 				"160",
-				"--vbr-new -V 3 -q 2",
+				"compression_level=2,global_quality=3", // --vbr-new -V 3 -q 2
 				outdir,
 				(this.outputID3CheckBox.checked ? "0" : "1"),
 				(this.outputSubdirsCheckBox.checked ? "1" : "0")
