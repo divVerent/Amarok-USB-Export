@@ -196,7 +196,8 @@ USBExportMainWindow.prototype.executeExport = function()
 							continue;
 						var dev = m[1];
 						var path = "./" + m[2];
-						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND d.lastmountpoint = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						// FIXME device "/" can be deviceid -1 too
+						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(NULLIF(d.lastmountpoint, '/'), '') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
 						Amarok.Collection.query(sql);
 					}
 					f_ratings.remove();
