@@ -71,9 +71,8 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 			var artist = result[j+4];
 			var title = result[j+5];
 			if(mountpoint == null)
-				path = "/" + path;
-			else
-				path = mountpoint + "/" + path;
+				mountpoint = "/";
+			path = mountpoint + "/" + path;
 			if(artist == null || artist == "")
 				artists = "???";
 			if(title == null || title == "")
@@ -191,13 +190,12 @@ USBExportMainWindow.prototype.executeExport = function()
 				{
 					for(var e in allRatings)
 					{
-						var m = e.match(/^(.*?)\/\.\/(.*?)$/);
+						var m = e.match(/^(.*?\/)(\.\/.*?)$/);
 						if(!m)
 							continue;
 						var dev = m[1];
-						var path = "./" + m[2];
 						// FIXME device "/" can be deviceid -1 too
-						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(NULLIF(d.lastmountpoint, '/'), '') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(d.lastmountpoint, '/') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
 						Amarok.Collection.query(sql);
 					}
 					f_ratings.remove();
