@@ -54,21 +54,26 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 
 		var sql;
 		if(i >= 10)
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else if(i >= 0)
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else
-			sql = "SELECT u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		//Amarok.debug(sql);
 		var result = Amarok.Collection.query(sql);
 		//Amarok.debug(result.length);
-		for(var j = 0; j < result.length; j += 5)
+		for(var j = 0; j < result.length; j += 6)
 		{
-			var path = result[j];
-			var len = result[j+1];
-			var rating = result[j+2];
-			var artist = result[j+3];
-			var title = result[j+4];
+			var mountpoint = result[j];
+			var path = result[j+1];
+			var len = result[j+2];
+			var rating = result[j+3];
+			var artist = result[j+4];
+			var title = result[j+5];
+			if(mountpoint == null)
+				path = "/" + path;
+			else
+				path = mountpoint + "/" + path;
 			if(artist == null || artist == "")
 				artists = "???";
 			if(title == null || title == "")
@@ -186,7 +191,12 @@ USBExportMainWindow.prototype.executeExport = function()
 				{
 					for(var e in allRatings)
 					{
-						var sql = "INSERT INTO statistics SET url=(SELECT id FROM urls WHERE rpath='" + Amarok.Collection.escape(e) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						var m = e.match(/^(.*?)\/\.\/(.*?)$/);
+						if(!m)
+							continue;
+						var dev = m[1];
+						var path = "./" + m[2];
+						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND d.lastmountpoint = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
 						Amarok.Collection.query(sql);
 					}
 					f_ratings.remove();
@@ -240,7 +250,6 @@ USBExportMainWindow.prototype.executeExport = function()
 				m3u,
 				mp3dir,
 				cachedir,
-				"/",
 				"160",
 				"compression_level=2,global_quality=3", // --vbr-new -V 3 -q 2
 				outdir,

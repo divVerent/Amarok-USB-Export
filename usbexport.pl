@@ -12,7 +12,6 @@ use POSIX qw/:sys_wait_h/;
 my $playlist = shift @ARGV; # playlist
 my $temp = shift @ARGV; # temp path
 my $cache = shift @ARGV; # cache location
-my $base = shift @ARGV; # relative base
 my $thrbitrate = shift @ARGV; # bitrate threshold
 my $oacopts = shift @ARGV; # any mplayer -oacopts
 my $devicedir = shift @ARGV; # dir to rsync to
@@ -77,7 +76,7 @@ sub TagMP3($$$)
 sub CacheFile($$$$)
 {
 	my ($file, $cachename, $tagname, $length) = @_;
-	my $infile = "$base/$file";
+	my $infile = "$file";
 	my $cachefile = "$cache/$cachename";
 
 	if(-e $cachefile)
@@ -102,7 +101,7 @@ sub CacheFile($$$$)
 	else
 	{
 		print "Always re-encoding other files.\n";
-		system 'mplayer -o "$outfile^" "$infile" -novideo -oac libmp3lame -oacopts ' . $oacopts . ' && mv "$outfile^" "$outfile"'
+		system 'mplayer -o "$outfile^" -of mp3 "$infile" -novideo -oac libmp3lame -oacopts ' . $oacopts . ' && mv "$outfile^" "$outfile"'
 			and die "lame/mplayer: $?";
 	}
 
