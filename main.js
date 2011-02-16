@@ -63,7 +63,7 @@ USBExportMainWindow.prototype.executeSave = function(e)
 	for(var i = 0; i < 10; ++i)
 		s.setValue("main/Rating" + i, this.ratingSpinBox[i].value);
 	Amarok.debug("Saved");
-}
+};
 
 USBExportMainWindow.prototype.getListForExport = function(field)
 {
@@ -149,25 +149,6 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 		return 0;
 	}
 
-	/*
-	var counter = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-	var total = 0;
-	for(var i = 0; i < list.length; ++i)
-	{
-		//Amarok.debug(list[i][0] + " | " + list[i][2]);
-		if(list[i][2] == null)
-			counter[0] += 1;
-		else
-			counter[list[i][2]+1] += 1;
-		++total;
-	}
-	Amarok.debug("Not rated: " + counter[0]*1.0/total);
-	for(var i = 1; i < 12; ++i)
-	{
-		Amarok.debug("Rating == " + (i-1)/2 + " stars: " + counter[i]*1.0/total);
-	}
-	*/
-
 	if(field != null)
 	{
 		function compareItem(a, b)
@@ -182,7 +163,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 	}
 
 	return list;
-}
+};
 
 USBExportMainWindow.prototype.executeExport = function()
 {
@@ -305,7 +286,7 @@ USBExportMainWindow.prototype.executeExport = function()
 	}
 
 	this.close(true);
-}
+};
 
 USBExportMainWindow.prototype.executeExportToPlaylist = function()
 {
@@ -324,28 +305,28 @@ USBExportMainWindow.prototype.executeExportToPlaylist = function()
 	{
 		Amarok.debug("" + e);
 	}
-}
+};
 
 USBExportMainWindow.prototype.selectOutputTemp = function()
 {
 	var out = QFileDialog.getExistingDirectory(null, "Select temporary directory (WILL GET DELETED)", this.outputTempLineEdit.text);
 	if(out != "")
 		this.outputTempLineEdit.text = out;
-}
+};
 
 USBExportMainWindow.prototype.selectOutputCache = function()
 {
 	var out = QFileDialog.getExistingDirectory(null, "Select cache directory", this.outputCacheLineEdit.text);
 	if(out != "")
 		this.outputCacheLineEdit.text = out;
-}
+};
 
 USBExportMainWindow.prototype.selectOutputDeviceDir = function()
 {
 	var out = QFileDialog.getExistingDirectory(null, "Select output directory", this.outputDeviceDirLineEdit.text);
 	if(out != "")
 		this.outputDeviceDirLineEdit.text = out;
-}
+};
 
 function USBExportMainWindow()
 {
