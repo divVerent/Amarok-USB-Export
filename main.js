@@ -3,6 +3,44 @@ Importer.loadQtBinding( "qt.gui" );
 
 var configFileName = Amarok.Info.scriptPath() + "/usbexport.conf";
 
+var artistMap = {};
+
+{
+	var s = new QSettings(configFileName, QSettings.NativeFormat);
+	s.beginGroup("artistRemap");
+	children = s.childKeys();
+	for(i = 0; i < children.length; ++i)
+	{
+		var k = children[i];
+		var v = s.value(k);
+		artistMap[k] = new RegExp("^(" + v + ")$", 'i');
+	}
+	s.endGroup();
+}
+
+function mapArtist(artist)
+{
+	for(var k in artistMap)
+	{
+		var v = artistMap[k];
+		if(artist.match(v))
+			return "REMAPPED:" + k;
+	}
+	return artist;
+}
+
+function debugWrapper(f)
+{
+	return function(x)
+	{
+		Amarok.debug("debugWrapper: IN " + x);
+		var r = f(x);
+		Amarok.debug("debugWrapper: OUT " + r);
+		return r;
+	};
+}
+mapArtist = debugWrapper(mapArtist);
+
 USBExportMainWindow.prototype = new QMainWindow();
 
 USBExportMainWindow.prototype.executeSave = function(e)
@@ -75,6 +113,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 			path = mountpoint + "/" + path;
 			if(artist == null || artist == "")
 				artists = "???";
+			var mappedArtist = mapArtist(artist);
 			if(title == null || title == "")
 			{
 				title = "" + path;
@@ -85,9 +124,9 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 				rating = parseInt(rating);
 			else
 				rating = null;
-			if(dupeskip[artist + " - " + title])
+			if(dupeskip[mappedArtist + " - " + title])
 				continue;
-			dupeskip[artist + " - " + title] = true;
+			dupeskip[mappedArtist + " - " + title] = true;
 			if(len > totalTimeRemaining + timeRemaining)
 			{
 				// if we exceeded the TOTAL time, bail out
@@ -194,8 +233,7 @@ USBExportMainWindow.prototype.executeExport = function()
 						if(!m)
 							continue;
 						var dev = m[1];
-						// FIXME device "/" can be deviceid -1 too
-						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM u.urls LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(d.lastmountpoint, '/') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM urls u LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(d.lastmountpoint, '/') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
 						Amarok.Collection.query(sql);
 					}
 					f_ratings.remove();
