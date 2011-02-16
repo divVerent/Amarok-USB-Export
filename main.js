@@ -29,6 +29,7 @@ function mapArtist(artist)
 	return artist;
 }
 
+/*
 function debugWrapper(f)
 {
 	return function(x)
@@ -40,6 +41,7 @@ function debugWrapper(f)
 	};
 }
 mapArtist = debugWrapper(mapArtist);
+*/
 
 USBExportMainWindow.prototype = new QMainWindow();
 
@@ -443,10 +445,60 @@ function USBExportCallback() {
 	var mainWindow = new USBExportMainWindow();
 }
 
+function FixRatingsCallback() {
+	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
+	var result = Amarok.Collection.query(sql);
+	var dupeskip = {};
+	for(var j = 0; j < result.length; j += 5)
+	{
+		var mountpoint = result[j];
+		var path = result[j+1];
+		var rating = result[j+2];
+		var artist = result[j+3];
+		var title = result[j+4];
+		Amarok.debug(path);
+		if(artist == null || artist == "")
+			artists = "???";
+		var mappedArtist = mapArtist(artist);
+		var thisone = { "mountpoint": mountpoint, "path": path, "rating": rating, "artist": artist, "title": title };
+		if(dupeskip[mappedArtist + " - " + title] == null)
+			dupeskip[mappedArtist + " - " + title] = [];
+		dupeskip[mappedArtist + " - " + title].push(thisone);
+	}
+	for(var i in dupeskip)
+	{
+		Amarok.debug(i);
+		var d = dupeskip[i];
+		if(d.length < 2)
+			continue;
+		Amarok.debug(d.length);
+		var minRating = d[0].rating;
+		var maxRating = d[0].rating;
+		for(var j = 1; j < d.length; ++j)
+		{
+			if(d[i].rating < minRating)
+				minRating = d[i].rating;
+			if(d[i].rating > maxRating)
+				maxRating = d[i].rating;
+		}
+		if(minRating == maxRating)
+			continue;
+		Amarok.debug(i + ": " + minRating + " < " + maxRating);
+	}
+}
+
 if(Amarok.Window.addToolsMenu("script_usb_export", "USB Export..."))
 {
 	var sync_button = Amarok.Window.ToolsMenu.script_usb_export;
 	sync_button['triggered()'].connect(USBExportCallback);
+}
+else
+	Amarok.debug("USB Export menu already exists");
+
+if(Amarok.Window.addToolsMenu("script_usb_export_fixratings", "Fix Ratings..."))
+{
+	var sync_button = Amarok.Window.ToolsMenu.script_usb_export_fixratings;
+	sync_button['triggered()'].connect(FixRatingsCallback);
 }
 else
 	Amarok.debug("USB Export menu already exists");
