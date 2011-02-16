@@ -446,6 +446,8 @@ function USBExportCallback() {
 }
 
 function FixRatingsCallback() {
+	var sql = "UPDATE statistics SET rating=NULL WHERE rating=0;";
+	Amarok.Collection.query(sql);
 	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
 	var result = Amarok.Collection.query(sql);
 	var dupeskip = {};
@@ -467,23 +469,32 @@ function FixRatingsCallback() {
 	}
 	for(var i in dupeskip)
 	{
-		Amarok.debug(i);
 		var d = dupeskip[i];
 		if(d.length < 2)
 			continue;
-		Amarok.debug(d.length);
-		var minRating = d[0].rating;
-		var maxRating = d[0].rating;
-		for(var j = 1; j < d.length; ++j)
+		var minRating = null;
+		var maxRating = null;
+		var nullCount = 0;
+		for(var j = 0; j < d.length; ++j)
 		{
-			if(d[i].rating < minRating)
-				minRating = d[i].rating;
-			if(d[i].rating > maxRating)
-				maxRating = d[i].rating;
+			if(d[j].rating == "")
+			{
+				++nullCount;
+				continue;
+			}
+			if(minRating == null)
+			{
+				minRating = maxRating = d[j].rating;
+				continue;
+			}
+			if(d[j].rating < minRating)
+				minRating = d[j].rating;
+			if(d[j].rating > maxRating)
+				maxRating = d[j].rating;
 		}
-		if(minRating == maxRating)
+		if((minRating == null) || (minRating == maxRating && !nullCount))
 			continue;
-		Amarok.debug(i + ": " + minRating + " < " + maxRating);
+		Amarok.debug(i + ": " + minRating + " < " + maxRating + " (" + nullCount + " NULLs)");
 	}
 }
 
