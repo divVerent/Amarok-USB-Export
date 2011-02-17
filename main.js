@@ -4,9 +4,11 @@ Importer.loadQtBinding( "qt.gui" );
 var configFileName = Amarok.Info.scriptPath() + "/usbexport.conf";
 
 var artistMap = {};
-
+var specialsList = [];
 {
 	var s = new QSettings(configFileName, QSettings.NativeFormat);
+	var children;
+
 	s.beginGroup("artistRemap");
 	children = s.childKeys();
 	for(i = 0; i < children.length; ++i)
@@ -14,6 +16,16 @@ var artistMap = {};
 		var k = children[i];
 		var v = s.value(k);
 		artistMap[k] = new RegExp("^(" + v + ")$", 'i');
+	}
+	s.endGroup();
+
+	s.beginGroup("specialAlbums");
+	children = s.childKeys();
+	for(i = 0; i < children.length; ++i)
+	{
+		var k = children[i];
+		var v = s.value(k);
+		specialsList.push(new RegExp("^(" + v + ")$", 'i'));
 	}
 	s.endGroup();
 }
@@ -27,6 +39,18 @@ function mapArtist(artist)
 			return "REMAPPED:" + k;
 	}
 	return artist;
+}
+
+function isSpecialAlbum(artist, album)
+{
+	var s = artist + " - " + album;
+	for(var i = 0; i < specialsList.length; ++i)
+	{
+		var v = specialsList[i];
+		if(s.match(v))
+			return true;
+	}
+	return false;
 }
 
 /*
@@ -74,6 +98,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 	var list = [];
 	var dupeskip = new Object();
 	var timeRemaining = 0;
+	var noDupeID = 0;
 	OUTER:
 	for(var i = 10; !finished && i >= -1; --i)
 	{
@@ -94,28 +119,31 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 
 		var sql;
 		if(i >= 10)
-			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, alb.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else if(i >= 0)
-			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, alb.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else
-			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, alb.name, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		//Amarok.debug(sql);
 		var result = Amarok.Collection.query(sql);
 		//Amarok.debug(result.length);
-		for(var j = 0; j < result.length; j += 6)
+		for(var j = 0; j < result.length; j += 7)
 		{
 			var mountpoint = result[j];
 			var path = result[j+1];
 			var len = result[j+2];
 			var rating = result[j+3];
 			var artist = result[j+4];
-			var title = result[j+5];
+			var album = result[j+5];
+			var title = result[j+6];
 			if(mountpoint == null)
 				mountpoint = "/";
 			path = mountpoint + "/" + path;
 			if(artist == null || artist == "")
-				artists = "???";
+				artist = "???";
 			var mappedArtist = mapArtist(artist);
+			if(isSpecialAlbum(artist, album))
+				mappedArtist += " - " + noDupeID++;
 			if(title == null || title == "")
 			{
 				title = "" + path;
@@ -299,8 +327,7 @@ USBExportMainWindow.prototype.executeExportToPlaylist = function()
 		Amarok.Playlist.clearPlaylist();
 		for(var i = 0; i < list.length; ++i)
 		{
-			Amarok.debug(list[i].path);
-				Amarok.Playlist.addMedia(new QUrl("file:///" + list[i].path));
+			Amarok.Playlist.addMedia(new QUrl("file://" + list[i].path));
 		}
 	}
 	catch(e)
@@ -448,25 +475,33 @@ function USBExportCallback() {
 function FixRatingsCallback() {
 	var sql = "UPDATE statistics SET rating=NULL WHERE rating=0;";
 	Amarok.Collection.query(sql);
-	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
+	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, alb.name, t.title, u.id FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
 	var result = Amarok.Collection.query(sql);
 	var dupeskip = {};
-	for(var j = 0; j < result.length; j += 5)
+	var noDupeID = 0;
+	for(var j = 0; j < result.length; j += 7)
 	{
 		var mountpoint = result[j];
 		var path = result[j+1];
 		var rating = result[j+2];
 		var artist = result[j+3];
-		var title = result[j+4];
-		Amarok.debug(path);
+		var album = result[j+4];
+		var title = result[j+5];
+		var urlid = result[j+6];
+		if(mountpoint == null)
+			mountpoint = "/";
+		path = mountpoint + "/" + path;
 		if(artist == null || artist == "")
 			artists = "???";
 		var mappedArtist = mapArtist(artist);
-		var thisone = { "mountpoint": mountpoint, "path": path, "rating": rating, "artist": artist, "title": title };
+		if(isSpecialAlbum(artist, album))
+			mappedArtist += " - " + noDupeID++;
+		var thisone = { "path": path, "rating": rating, "artist": artist, "title": title, "urlid": urlid };
 		if(dupeskip[mappedArtist + " - " + title] == null)
 			dupeskip[mappedArtist + " - " + title] = [];
 		dupeskip[mappedArtist + " - " + title].push(thisone);
 	}
+	Amarok.Playlist.clearPlaylist();
 	for(var i in dupeskip)
 	{
 		var d = dupeskip[i];
@@ -492,9 +527,23 @@ function FixRatingsCallback() {
 			if(d[j].rating > maxRating)
 				maxRating = d[j].rating;
 		}
-		if((minRating == null) || (minRating == maxRating && !nullCount))
+		if(minRating == null)
 			continue;
-		Amarok.debug(i + ": " + minRating + " < " + maxRating + " (" + nullCount + " NULLs)");
+		if(minRating == maxRating)
+		{
+			for(var j = 0; j < d.length; ++j)
+				if(d[j].rating == "")
+				{
+					Amarok.debug("Autofixing missing ratign for " + d[j].path);
+					var sql = "INSERT INTO statistics SET url=" + d[j].urlid + ", rating=" + minRating + " ON DUPLICATE KEY UPDATE rating=" + minRating;
+					Amarok.Collection.query(sql);
+				}
+			continue;
+		}
+		for(var j = 0; j < d.length; ++j)
+		{
+			Amarok.Playlist.addMedia(new QUrl("file://" + d[j].path));
+		}
 	}
 }
 
