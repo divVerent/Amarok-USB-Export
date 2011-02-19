@@ -478,6 +478,8 @@ function FixRatingsCallback() {
 		var album = result[j+4];
 		var title = result[j+5];
 		var urlid = result[j+6];
+		if(title == "")
+			continue;
 		if(mountpoint == null)
 			mountpoint = "/";
 		path = mountpoint + "/" + path;
