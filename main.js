@@ -5,30 +5,6 @@ var configFileName = Amarok.Info.scriptPath() + "/usbexport.conf";
 
 var artistMap = {};
 var specialsList = [];
-{
-	var s = new QSettings(configFileName, QSettings.NativeFormat);
-	var children;
-
-	s.beginGroup("artistRemap");
-	children = s.childKeys();
-	for(i = 0; i < children.length; ++i)
-	{
-		var k = children[i];
-		var v = s.value(k);
-		artistMap[k] = new RegExp("^(" + v + ")$", 'i');
-	}
-	s.endGroup();
-
-	s.beginGroup("specialAlbums");
-	children = s.childKeys();
-	for(i = 0; i < children.length; ++i)
-	{
-		var k = children[i];
-		var v = s.value(k);
-		specialsList.push(new RegExp("^(" + v + ")$", 'i'));
-	}
-	s.endGroup();
-}
 
 function mapArtist(artist)
 {
@@ -53,19 +29,31 @@ function isSpecialAlbum(artist, album)
 	return false;
 }
 
-/*
-function debugWrapper(f)
+function loadConfig()
 {
-	return function(x)
+	var s = new QSettings(configFileName, QSettings.NativeFormat);
+	var children;
+
+	s.beginGroup("artistRemap");
+	children = s.childKeys();
+	for(i = 0; i < children.length; ++i)
 	{
-		Amarok.debug("debugWrapper: IN " + x);
-		var r = f(x);
-		Amarok.debug("debugWrapper: OUT " + r);
-		return r;
-	};
+		var k = children[i];
+		var v = s.value(k);
+		artistMap[k] = new RegExp("^(" + v + ")$", 'i');
+	}
+	s.endGroup();
+
+	s.beginGroup("specialAlbums");
+	children = s.childKeys();
+	for(i = 0; i < children.length; ++i)
+	{
+		var k = children[i];
+		var v = s.value(k);
+		specialsList.push(new RegExp("^(" + v + ")$", 'i'));
+	}
+	s.endGroup();
 }
-mapArtist = debugWrapper(mapArtist);
-*/
 
 USBExportMainWindow.prototype = new QMainWindow();
 
@@ -469,10 +457,12 @@ function USBExportMainWindow()
 }
 
 function USBExportCallback() {
+	loadConfig();
 	var mainWindow = new USBExportMainWindow();
 }
 
 function FixRatingsCallback() {
+	loadConfig();
 	var sql = "UPDATE statistics SET rating=NULL WHERE rating=0;";
 	Amarok.Collection.query(sql);
 	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, alb.name, t.title, u.id FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
