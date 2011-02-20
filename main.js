@@ -107,7 +107,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 
 		var sql;
 		if(i >= 10)
-			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, alb.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating IS NULL ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
+			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, alb.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating IS NULL OR s.rating = 0 ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else if(i >= 0)
 			sql = "SELECT d.lastmountpoint, u.rpath, t.length, s.rating, a.name, alb.name, t.title FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE s.rating > " + Amarok.Collection.escape(i) + " ORDER BY RAND() LIMIT " + Amarok.Collection.escape(maxRemaining) + ";";
 		else
