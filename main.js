@@ -138,7 +138,7 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 				title = title.replace(/^.*\//, "");
 				title = title.replace(/\.[^.]*$/, "");
 			}
-			if(rating != null && rating != "")
+			if(rating != null && rating != "" && parseInt(rating) != 0)
 				rating = parseInt(rating);
 			else
 				rating = null;
