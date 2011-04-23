@@ -279,6 +279,7 @@ USBExportMainWindow.prototype.executeExport = function()
 			}
 
 			// now run the converter
+			var threads = 8; // FIXME make configurable
 			QProcess.startDetached("xterm", [
 				"-hold",
 				"-e",
@@ -290,7 +291,8 @@ USBExportMainWindow.prototype.executeExport = function()
 				"compression_level=2,global_quality=3", // --vbr-new -V 3 -q 2
 				outdir,
 				(this.outputID3CheckBox.checked ? "0" : "1"),
-				(this.outputSubdirsCheckBox.checked ? "1" : "0")
+				(this.outputSubdirsCheckBox.checked ? "1" : "0"),
+				threads
 			]);
 
 			// then rsync it to the USB device

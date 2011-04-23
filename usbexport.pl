@@ -17,6 +17,7 @@ my $oacopts = shift @ARGV; # any mplayer -oacopts
 my $devicedir = shift @ARGV; # dir to rsync to
 my $no_id3 = shift @ARGV;
 my $use_subdirs = shift @ARGV;
+my $njobs = shift @ARGV;
 
 print STDERR "clearing target directory...\n";
 system qw/rm -rf/, $temp
@@ -122,7 +123,6 @@ sub ConvertFile($$$$$)
 	return 1;
 }
 
-my $njobs = 4;
 my @jobs = ();
 my $joberror = 0;
 sub waitjob($)
