@@ -226,16 +226,36 @@ USBExportMainWindow.prototype.executeExport = function()
 				var result = (Amarok.alert(str, "questionYesNo") == 3); // yes == 3, no == 4
 				if(result)
 				{
+					var errors = "";
 					for(var e in allRatings)
 					{
-						var m = e.match(/^(.*?\/)(\.\/.*?)$/);
+						var m = e.match(/^(.*?)\/(\.\/.*?)$/);
 						if(!m)
 							continue;
 						var dev = m[1];
-						var sql = "INSERT INTO statistics SET url=(SELECT u.id FROM urls u LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(d.lastmountpoint, '/') = '" + Amarok.Collection.escape(dev) + "'), rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
-						Amarok.Collection.query(sql);
+						var path = m[2];
+						if(dev == "")
+							dev = "/";
+						var urlidsql = "SELECT u.id FROM urls u LEFT JOIN devices d ON d.id = u.deviceid WHERE u.rpath='" + Amarok.Collection.escape(path) + "' AND IFNULL(d.lastmountpoint, '/') = '" + Amarok.Collection.escape(dev) + "'";
+						var urliddata = Amarok.Collection.query(urlidsql);
+						if(urliddata.length < 1)
+						{
+							errors += urlidsql + "\n";
+							continue;
+						}
+						var urlid = urliddata[0];
+						var sql = "INSERT INTO statistics SET url=" + urlid + ", rating=" + allRatings[e] + " ON DUPLICATE KEY UPDATE rating=" + allRatings[e];
+						var changed = Amarok.Collection.query(sql);
+						if(!changed)
+						{
+							errors += sql + "\n";
+							continue;
+						}
 					}
-					f_ratings.remove();
+					if(errors)
+						Amarok.alert(errors);
+					else
+						f_ratings.remove();
 				}
 			}
 		}
