@@ -142,9 +142,12 @@ USBExportMainWindow.prototype.getListForExport = function(field)
 				rating = parseInt(rating);
 			else
 				rating = null;
-			if(dupeskip[mappedArtist + " - " + title])
+			var simplified = mappedArtist + " - " + title;
+			simplified = simplified.toLowerCase();
+			simplified = simplified.replace(/[^a-z0-9 ]/g, "");
+			if(dupeskip[simplified])
 				continue;
-			dupeskip[mappedArtist + " - " + title] = true;
+			dupeskip[simplified] = true;
 			if(len > totalTimeRemaining + timeRemaining)
 			{
 				// if we exceeded the TOTAL time, bail out
@@ -487,7 +490,7 @@ function FixRatingsCallback() {
 	loadConfig();
 	var sql = "UPDATE statistics SET rating=NULL WHERE rating=0;";
 	Amarok.Collection.query(sql);
-	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, alb.name, t.title, u.id FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid WHERE (SELECT COUNT(*) FROM tracks tt WHERE tt.title = t.title) >= 2;";
+	var sql = "SELECT d.lastmountpoint, u.rpath, s.rating, a.name, alb.name, t.title, u.id FROM tracks t LEFT JOIN statistics s ON s.url = t.url LEFT JOIN artists a ON a.id = t.artist LEFT JOIN albums alb ON alb.id = t.album INNER JOIN urls u on u.id = t.url LEFT JOIN devices d ON d.id = u.deviceid;";
 	var result = Amarok.Collection.query(sql);
 	var dupeskip = {};
 	var noDupeID = 0;
@@ -507,13 +510,16 @@ function FixRatingsCallback() {
 		path = mountpoint + "/" + path;
 		if(artist == null || artist == "")
 			artists = "???";
+		var thisone = { "path": path, "rating": rating, "artist": artist, "title": title, "urlid": urlid };
 		var mappedArtist = mapArtist(artist);
 		if(isSpecialAlbum(artist, album))
 			mappedArtist += " - " + noDupeID++;
-		var thisone = { "path": path, "rating": rating, "artist": artist, "title": title, "urlid": urlid };
-		if(dupeskip[mappedArtist + " - " + title] == null)
-			dupeskip[mappedArtist + " - " + title] = [];
-		dupeskip[mappedArtist + " - " + title].push(thisone);
+		simplified = simplified.toLowerCase();
+		simplified = simplified.replace(/[^a-z0-9 ]/g, "");
+		simplified = simplified.replace(/[^A-Za-z0-9 ]/g, "");
+		if(dupeskip[simplified] == null)
+			dupeskip[simplified] = [];
+		dupeskip[simplified].push(thisone);
 	}
 	Amarok.Playlist.clearPlaylist();
 	for(var i in dupeskip)
