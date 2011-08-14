@@ -503,22 +503,28 @@ function FixRatingsCallback() {
 		var album = result[j+4];
 		var title = result[j+5];
 		var urlid = result[j+6];
-		if(title == "")
-			continue;
+
 		if(mountpoint == null)
 			mountpoint = "/";
 		path = mountpoint + "/" + path;
 		if(artist == null || artist == "")
-			artists = "???";
-		var thisone = { "path": path, "rating": rating, "artist": artist, "title": title, "urlid": urlid };
+			artist = "???";
 		var mappedArtist = mapArtist(artist);
 		if(isSpecialAlbum(artist, album))
 			mappedArtist += " - " + noDupeID++;
+		if(title == null || title == "")
+		{
+			title = "" + path;
+			title = title.replace(/^.*\//, "");
+			title = title.replace(/\.[^.]*$/, "");
+		}
+		var simplified = mappedArtist + " - " + title;
 		simplified = simplified.toLowerCase();
 		simplified = simplified.replace(/[^a-z0-9 ]/g, "");
-		simplified = simplified.replace(/[^A-Za-z0-9 ]/g, "");
+
 		if(dupeskip[simplified] == null)
 			dupeskip[simplified] = [];
+		var thisone = { "path": path, "rating": rating, "artist": artist, "title": title, "urlid": urlid };
 		dupeskip[simplified].push(thisone);
 	}
 	Amarok.Playlist.clearPlaylist();
