@@ -340,7 +340,7 @@ USBExportMainWindow.prototype.executeExportToPlaylist = function()
 		Amarok.Playlist.clearPlaylist();
 		for(var i = 0; i < list.length; ++i)
 		{
-			Amarok.Playlist.addMedia(new QUrl("file://" + list[i].path));
+			Amarok.Playlist.addMedia(QUrl.fromLocalFile(list[i].path));
 		}
 	}
 	catch(e)
@@ -568,7 +568,8 @@ function FixRatingsCallback() {
 		}
 		for(var j = 0; j < d.length; ++j)
 		{
-			Amarok.Playlist.addMedia(new QUrl("file://" + d[j].path));
+			Amarok.alert(d[j].path);
+			Amarok.Playlist.addMedia(QUrl.fromLocalFile(d[j].path));
 		}
 	}
 }
