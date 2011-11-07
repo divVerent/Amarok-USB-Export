@@ -568,7 +568,7 @@ function FixRatingsCallback() {
 		}
 		for(var j = 0; j < d.length; ++j)
 		{
-			Amarok.alert(d[j].path);
+			//Amarok.alert(d[j].path);
 			Amarok.Playlist.addMedia(QUrl.fromLocalFile(d[j].path));
 		}
 	}
